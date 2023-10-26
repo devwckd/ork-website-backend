@@ -9,6 +9,7 @@ use crate::managers::organization::OrganizationManager;
 use crate::managers::organization_member::OrganizationMemberManager;
 use crate::managers::proxy_template::ProxyTemplateManager;
 use crate::managers::region::RegionManager;
+use crate::managers::region_connection::RegionConnectionManager;
 use crate::managers::session::SessionManager;
 use crate::managers::user::UserManager;
 use crate::repositories::organization::OrganizationRepository;
@@ -44,6 +45,7 @@ async fn main() {
         OrganizationMemberManager::new(organization_member_repository.clone());
     let proxy_template_manager = ProxyTemplateManager::new(proxy_template_repository.clone());
     let region_manager = RegionManager::new(region_repository.clone());
+    let region_connection_manager = RegionConnectionManager::new(region_manager.clone()).await;
     let user_manager = UserManager::new(user_repository.clone());
     let session_manager = SessionManager::new(session_repository.clone());
 
