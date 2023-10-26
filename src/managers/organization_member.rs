@@ -25,6 +25,17 @@ impl OrganizationMemberManager {
             .find_with_role(organization_id, user_id, min_role)
             .await
     }
+
+    pub async fn find_by_user_id(
+        &self,
+        organization_id: &Uuid,
+        user_id: &Uuid,
+    ) -> OrganizationMemberResult<OrganizationMember> {
+        self.organization_member_repository
+            .find_by_user_id(organization_id, user_id)
+            .await
+    }
+
     pub async fn list(
         &self,
         organization_id: &Uuid,

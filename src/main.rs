@@ -18,6 +18,7 @@ use crate::repositories::regions::RegionRepository;
 use crate::repositories::session::SessionRepository;
 use crate::repositories::user::UserRepository;
 use axum::http::{HeaderName, HeaderValue};
+use axum::Extension;
 use std::net::SocketAddr;
 use tower_http::cors::{AllowHeaders, AllowOrigin, CorsLayer};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
@@ -54,31 +55,20 @@ async fn main() {
         .nest(
             "/organizations",
             routes::organization::router(
-                session_manager.clone(),
                 organization_manager.clone(),
                 organization_member_manager.clone(),
                 region_manager.clone(),
             )
             .nest(
                 "/:org_id/members",
-                routes::organization_member::router(
-                    session_manager.clone(),
-                    organization_member_manager.clone(),
-                ),
+                routes::organization_member::router(organization_member_manager.clone()),
             )
             .nest(
                 "/:org_id/proxy-templates",
-                routes::proxy_template::router(
-                    session_manager.clone(),
-                    organization_manager.clone(),
-                    proxy_template_manager.clone(),
-                ),
+                routes::proxy_template::router(proxy_template_manager.clone()),
             ),
         )
-        .nest(
-            "/regions",
-            routes::region::router(session_manager.clone(), region_manager.clone()),
-        )
+        .nest("/regions", routes::region::router(region_manager.clone()))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().level(tracing::Level::INFO))
@@ -94,7 +84,10 @@ async fn main() {
                 .allow_origin(AllowOrigin::exact(HeaderValue::from_static(
                     "http://localhost:5173",
                 ))),
-        );
+        )
+        .layer(Extension(session_manager.clone()))
+        .layer(Extension(organization_manager.clone()))
+        .layer(Extension(organization_member_manager.clone()));
 
     info!("binding on {}", &address);
 

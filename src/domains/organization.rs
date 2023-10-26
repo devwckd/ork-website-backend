@@ -54,7 +54,9 @@ impl From<RegionError> for OrganizationError {
 
 impl From<OrganizationMemberError> for OrganizationError {
     fn from(value: OrganizationMemberError) -> Self {
-        match value {}
+        match value {
+            OrganizationMemberError::NotFound => OrganizationError::NotFound,
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::domains::auth::{AuthResult, LoginData, RegisterData};
 use crate::domains::session::Session;
 use crate::domains::user::User;
-use crate::extractors::authenticated::{Authenticated, SessionState};
+use crate::extractors::authenticated_user::AuthenticatedUser;
 use crate::managers::session::SessionManager;
 use crate::managers::user::UserManager;
 use argon2::password_hash::rand_core::OsRng;
@@ -93,11 +93,11 @@ async fn login(
     Ok((jar, Redirect::to("/auth/me")))
 }
 
-async fn me(user: Authenticated) -> AuthResult<Json<User>> {
+async fn me(user: AuthenticatedUser) -> AuthResult<Json<User>> {
     Ok(Json(user.into()))
 }
 
-async fn logout(_user: Authenticated, jar: CookieJar) -> AuthResult<CookieJar> {
+async fn logout(_user: AuthenticatedUser, jar: CookieJar) -> AuthResult<CookieJar> {
     // TODO: remove from db
     let jar = jar.remove(
         Cookie::build("ork_session_id", "")
@@ -112,12 +112,6 @@ async fn logout(_user: Authenticated, jar: CookieJar) -> AuthResult<CookieJar> {
 struct AuthState {
     user_manager: UserManager,
     session_manager: SessionManager,
-}
-
-impl SessionState for AuthState {
-    fn session_manager(&self) -> &SessionManager {
-        &self.session_manager
-    }
 }
 
 fn hash_password(password: &String) -> String {

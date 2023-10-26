@@ -1,6 +1,6 @@
 use crate::domains::organization::{CreateOrganizationData, Organization, OrganizationResult};
 use crate::domains::organization_member::OrganizationMember;
-use crate::extractors::authenticated::{Authenticated, SessionState};
+use crate::extractors::authenticated_user::AuthenticatedUser;
 use crate::managers::organization::OrganizationManager;
 use crate::managers::organization_member::OrganizationMemberManager;
 use crate::managers::region::RegionManager;
@@ -13,13 +13,11 @@ use uuid::Uuid;
 use validator::Validate;
 
 pub fn router(
-    session_manager: SessionManager,
     organization_manager: OrganizationManager,
     organization_member_manager: OrganizationMemberManager,
     region_manager: RegionManager,
 ) -> axum::Router {
     let state = OrganizationState {
-        session_manager,
         organization_manager,
         organization_member_manager,
         region_manager,
@@ -36,7 +34,7 @@ async fn list(
         organization_manager,
         ..
     }): State<OrganizationState>,
-    user: Authenticated,
+    user: AuthenticatedUser,
 ) -> OrganizationResult<Json<Vec<Organization>>> {
     organization_manager
         .list_participating(&user.id)
@@ -51,7 +49,7 @@ async fn create(
         region_manager,
         ..
     }): State<OrganizationState>,
-    user: Authenticated,
+    user: AuthenticatedUser,
     Json(data): Json<CreateOrganizationData>,
 ) -> OrganizationResult<Json<Organization>> {
     data.validate()?;
@@ -85,14 +83,7 @@ async fn create(
 
 #[derive(Clone)]
 struct OrganizationState {
-    session_manager: SessionManager,
     organization_manager: OrganizationManager,
     organization_member_manager: OrganizationMemberManager,
     region_manager: RegionManager,
-}
-
-impl SessionState for OrganizationState {
-    fn session_manager(&self) -> &SessionManager {
-        &self.session_manager
-    }
 }
