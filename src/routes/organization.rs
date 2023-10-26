@@ -54,11 +54,7 @@ async fn create(
 ) -> OrganizationResult<Json<Organization>> {
     data.validate()?;
 
-    info!("{:?}", data);
-
     let region = region_manager.find_by_slug(&data.region_slug).await?;
-
-    info!("{:?}", region);
 
     let organization = Organization {
         id: Uuid::new_v4(),
@@ -66,7 +62,7 @@ async fn create(
         region_id: region.id.clone(),
     };
 
-    organization_manager.insert(&organization).await?;
+    organization_manager.create(&organization).await?;
 
     let organization_member = OrganizationMember {
         organization_id: organization.id.clone(),

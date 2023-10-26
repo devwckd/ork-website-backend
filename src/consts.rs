@@ -7,3 +7,13 @@ lazy_static! {
         Regex::new(r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$").unwrap();
     pub static ref SPACE_REGEX: Regex = Regex::new(r"\s+").unwrap();
 }
+
+pub trait AsNamespaceName {
+    fn as_namespace_name(&self) -> String;
+}
+
+impl AsNamespaceName for String {
+    fn as_namespace_name(&self) -> String {
+        format!("org-{}", self)
+    }
+}

@@ -5,8 +5,10 @@ mod managers;
 mod repositories;
 mod routes;
 
+use crate::managers::kube::KubeManager;
 use crate::managers::organization::OrganizationManager;
 use crate::managers::organization_member::OrganizationMemberManager;
+use crate::managers::proxy::ProxyManager;
 use crate::managers::proxy_template::ProxyTemplateManager;
 use crate::managers::region::RegionManager;
 use crate::managers::region_connection::RegionConnectionManager;
@@ -14,6 +16,7 @@ use crate::managers::session::SessionManager;
 use crate::managers::user::UserManager;
 use crate::repositories::organization::OrganizationRepository;
 use crate::repositories::organization_member::OrganizationMemberRepository;
+use crate::repositories::proxy::ProxyRepository;
 use crate::repositories::proxy_template::ProxyTemplateRepository;
 use crate::repositories::regions::RegionRepository;
 use crate::repositories::session::SessionRepository;
@@ -35,17 +38,21 @@ async fn main() {
 
     let organization_repository = OrganizationRepository::new(pg_pool.clone());
     let organization_member_repository = OrganizationMemberRepository::new(pg_pool.clone());
+    let proxy_repository = ProxyRepository::new(pg_pool.clone());
     let proxy_template_repository = ProxyTemplateRepository::new(pg_pool.clone());
     let region_repository = RegionRepository::new(pg_pool.clone());
     let user_repository = UserRepository::new(pg_pool.clone());
     let session_repository = SessionRepository::new(pg_pool.clone());
 
-    let organization_manager = OrganizationManager::new(organization_repository.clone());
-    let organization_member_manager =
-        OrganizationMemberManager::new(organization_member_repository.clone());
-    let proxy_template_manager = ProxyTemplateManager::new(proxy_template_repository.clone());
     let region_manager = RegionManager::new(region_repository.clone());
     let region_connection_manager = RegionConnectionManager::new(region_manager.clone()).await;
+    let kube_manager = KubeManager::new(region_connection_manager.clone());
+    let organization_manager =
+        OrganizationManager::new(kube_manager.clone(), organization_repository.clone());
+    let organization_member_manager =
+        OrganizationMemberManager::new(organization_member_repository.clone());
+    let proxy_manager = ProxyManager::new(kube_manager.clone(), proxy_repository.clone());
+    let proxy_template_manager = ProxyTemplateManager::new(proxy_template_repository.clone());
     let user_manager = UserManager::new(user_repository.clone());
     let session_manager = SessionManager::new(session_repository.clone());
 
@@ -64,6 +71,10 @@ async fn main() {
             .nest(
                 "/:org_id/members",
                 routes::organization_member::router(organization_member_manager.clone()),
+            )
+            .nest(
+                "/:org_id/proxies",
+                routes::proxy::router(proxy_manager.clone(), proxy_template_manager.clone()),
             )
             .nest(
                 "/:org_id/proxy-templates",

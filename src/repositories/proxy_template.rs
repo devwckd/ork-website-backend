@@ -1,4 +1,4 @@
-use crate::domains::proxy_template::{ProxyTemplate, ProxyTemplateResult};
+use crate::domains::proxy_template::{ProxyTemplate, ProxyTemplateError, ProxyTemplateResult};
 use sqlx::{query, query_as};
 use uuid::Uuid;
 
@@ -19,6 +19,19 @@ impl ProxyTemplateRepository {
                 .fetch_all(&self.pg_pool)
                 .await?,
         )
+    }
+
+    pub async fn find_by_slug(
+        &self,
+        organization_id: &Uuid,
+        slug: &String,
+    ) -> ProxyTemplateResult<ProxyTemplate> {
+        query_as("SELECT * FROM proxy_templates WHERE organization_id = $1 AND slug = $2 LIMIT 1;")
+            .bind(organization_id)
+            .bind(slug)
+            .fetch_optional(&self.pg_pool)
+            .await?
+            .ok_or(ProxyTemplateError::NotFound)
     }
 
     pub async fn insert(

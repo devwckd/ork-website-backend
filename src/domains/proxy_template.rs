@@ -24,6 +24,8 @@ pub type ProxyTemplateResult<R> = Result<R, ProxyTemplateError>;
 pub enum ProxyTemplateError {
     #[error("validation errors: {0}")]
     Validation(#[from] ValidationErrors),
+    #[error("proxy template not found")]
+    NotFound,
     #[error("organization not found")]
     OrganizationNotFound,
 }

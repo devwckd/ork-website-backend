@@ -10,9 +10,13 @@ argon2 = "0.5.2"
 async-trait = "0.1.74"
 axum = { version = "0.6.20", features = ["macros", "tracing"] }
 axum-extra = { version = "0.8.0", features = ["cookie-signed"] }
+k8s-openapi = { version = "0.20.0", features = ["v1_27"] }
+kube = "0.86.0"
 lazy_static = "1.4.0"
 log = "0.4.20"
+maplit = "1.0.2"
 password-hash = "0.5.0"
+rand = "0.8.5"
 regex = "1.10.2"
 serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.107"

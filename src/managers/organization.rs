@@ -1,15 +1,19 @@
-use crate::domains::organization::{Organization, OrganizationResult};
-use crate::repositories::organization::OrganizationRepository;
 use uuid::Uuid;
+
+use crate::domains::organization::{Organization, OrganizationResult};
+use crate::managers::kube::KubeManager;
+use crate::repositories::organization::OrganizationRepository;
 
 #[derive(Clone)]
 pub struct OrganizationManager {
+    kube_manager: KubeManager,
     organization_repository: OrganizationRepository,
 }
 
 impl OrganizationManager {
-    pub fn new(organization_repository: OrganizationRepository) -> Self {
+    pub fn new(kube_manager: KubeManager, organization_repository: OrganizationRepository) -> Self {
         Self {
+            kube_manager,
             organization_repository,
         }
     }
@@ -29,7 +33,13 @@ impl OrganizationManager {
             .await
     }
 
-    pub async fn insert(&self, organization: &Organization) -> OrganizationResult<()> {
-        self.organization_repository.insert(organization).await
+    pub async fn create(&self, organization: &Organization) -> OrganizationResult<()> {
+        self.organization_repository.insert(organization).await?;
+
+        self.kube_manager
+            .on_organization_creation(&organization)
+            .await;
+
+        Ok(())
     }
 }

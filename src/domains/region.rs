@@ -1,6 +1,7 @@
 use crate::domains::error::ErrorResponse;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use kube::config::Kubeconfig;
 use log::error;
 use uuid::Uuid;
 
@@ -9,9 +10,12 @@ pub struct Region {
     pub id: Uuid,
     pub slug: String,
     #[serde(skip_serializing)]
-    pub api_url: String,
-    #[serde(skip_serializing)]
-    pub cert: Vec<u8>,
+    pub options: sqlx::types::Json<RegionOptions>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct RegionOptions {
+    pub kube: Kubeconfig,
 }
 
 pub type RegionResult<R> = Result<R, RegionError>;

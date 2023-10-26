@@ -19,6 +19,16 @@ impl ProxyTemplateManager {
         self.proxy_template_repository.list(organization_id).await
     }
 
+    pub async fn find_by_slug(
+        &self,
+        organization_id: &Uuid,
+        slug: &String,
+    ) -> ProxyTemplateResult<ProxyTemplate> {
+        self.proxy_template_repository
+            .find_by_slug(organization_id, slug)
+            .await
+    }
+
     pub async fn insert(
         &self,
         organization_id: &Uuid,
