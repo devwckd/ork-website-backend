@@ -3,20 +3,22 @@ use uuid::Uuid;
 use crate::domains::organization::Organization;
 use crate::domains::proxy::{Proxy, ProxyResult};
 use crate::domains::proxy_template::ProxyTemplate;
-use crate::managers::kube::KubeManager;
 use crate::managers::region_connection::RegionConnectionManager;
 use crate::repositories::proxy::ProxyRepository;
 
 #[derive(Clone)]
 pub struct ProxyManager {
-    kube_manager: KubeManager,
+    region_connection_manager: RegionConnectionManager,
     proxy_repository: ProxyRepository,
 }
 
 impl ProxyManager {
-    pub fn new(kube_manager: KubeManager, proxy_repository: ProxyRepository) -> Self {
+    pub fn new(
+        region_connection_manager: RegionConnectionManager,
+        proxy_repository: ProxyRepository,
+    ) -> Self {
         Self {
-            kube_manager,
+            region_connection_manager,
             proxy_repository,
         }
     }
@@ -32,11 +34,14 @@ impl ProxyManager {
         proxy: &Proxy,
     ) -> ProxyResult<()> {
         self.proxy_repository
-            .insert(&organization.id, &proxy)
+            .insert(&organization.id, proxy)
             .await?;
 
-        self.kube_manager
-            .on_proxy_creation(organization, template, proxy)
+        self.region_connection_manager
+            .find_kube_wrapped_client_by_id(&organization.region_id)
+            .await
+            .unwrap()
+            .create_proxy_pod(organization, template, proxy)
             .await;
 
         Ok(())

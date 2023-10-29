@@ -1,5 +1,4 @@
 use crate::domains::proxy::{Proxy, ProxyResult};
-use sqlx::{query, query_as};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -14,7 +13,7 @@ impl ProxyRepository {
 
     pub async fn list(&self, organization_id: &Uuid) -> ProxyResult<Vec<Proxy>> {
         Ok(
-            query_as("SELECT * FROM proxies WHERE organization_id = $1;")
+            sqlx::query_as("SELECT * FROM proxies WHERE organization_id = $1;")
                 .bind(organization_id)
                 .fetch_all(&self.pg_pool)
                 .await?,
@@ -22,7 +21,7 @@ impl ProxyRepository {
     }
 
     pub async fn insert(&self, organization_id: &Uuid, proxy: &Proxy) -> ProxyResult<()> {
-        query(
+        sqlx::query(
             "INSERT INTO proxies(id, slug, template_id, organization_id) VALUES ($1, $2, $3, $4);",
         )
         .bind(&proxy.id)

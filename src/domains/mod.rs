@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod bridge;
 pub mod error;
 pub mod organization;
 pub mod organization_member;

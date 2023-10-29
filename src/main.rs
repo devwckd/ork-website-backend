@@ -1,3 +1,4 @@
+mod clients;
 mod consts;
 mod domains;
 mod extractors;
@@ -5,7 +6,7 @@ mod managers;
 mod repositories;
 mod routes;
 
-use crate::managers::kube::KubeManager;
+use crate::managers::bridge::BridgeManager;
 use crate::managers::organization::OrganizationManager;
 use crate::managers::organization_member::OrganizationMemberManager;
 use crate::managers::proxy::ProxyManager;
@@ -14,6 +15,7 @@ use crate::managers::region::RegionManager;
 use crate::managers::region_connection::RegionConnectionManager;
 use crate::managers::session::SessionManager;
 use crate::managers::user::UserManager;
+use crate::repositories::bridge::BridgeRepository;
 use crate::repositories::organization::OrganizationRepository;
 use crate::repositories::organization_member::OrganizationMemberRepository;
 use crate::repositories::proxy::ProxyRepository;
@@ -36,6 +38,7 @@ async fn main() {
 
     let pg_pool = create_pg_pool().await;
 
+    let bridge_repository = BridgeRepository::new(pg_pool.clone());
     let organization_repository = OrganizationRepository::new(pg_pool.clone());
     let organization_member_repository = OrganizationMemberRepository::new(pg_pool.clone());
     let proxy_repository = ProxyRepository::new(pg_pool.clone());
@@ -46,12 +49,16 @@ async fn main() {
 
     let region_manager = RegionManager::new(region_repository.clone());
     let region_connection_manager = RegionConnectionManager::new(region_manager.clone()).await;
-    let kube_manager = KubeManager::new(region_connection_manager.clone());
-    let organization_manager =
-        OrganizationManager::new(kube_manager.clone(), organization_repository.clone());
+    let bridge_manager =
+        BridgeManager::new(bridge_repository.clone(), region_connection_manager.clone());
+    let organization_manager = OrganizationManager::new(
+        region_connection_manager.clone(),
+        organization_repository.clone(),
+    );
     let organization_member_manager =
         OrganizationMemberManager::new(organization_member_repository.clone());
-    let proxy_manager = ProxyManager::new(kube_manager.clone(), proxy_repository.clone());
+    let proxy_manager =
+        ProxyManager::new(region_connection_manager.clone(), proxy_repository.clone());
     let proxy_template_manager = ProxyTemplateManager::new(proxy_template_repository.clone());
     let user_manager = UserManager::new(user_repository.clone());
     let session_manager = SessionManager::new(session_repository.clone());
@@ -79,6 +86,10 @@ async fn main() {
             .nest(
                 "/:org_id/proxy-templates",
                 routes::proxy_template::router(proxy_template_manager.clone()),
+            )
+            .nest(
+                "/:org_id/bridges",
+                routes::bridge::router(bridge_manager.clone()),
             ),
         )
         .nest("/regions", routes::region::router(region_manager.clone()))
@@ -117,7 +128,7 @@ fn init_logging() {
 }
 
 async fn create_pg_pool() -> sqlx::PgPool {
-    let pg_pool = sqlx::PgPool::connect("postgres://postgres:secret@localhost:5432")
+    let pg_pool = sqlx::PgPool::connect("postgres://postgres:secret@localhost:5432/backend")
         .await
         .unwrap();
 

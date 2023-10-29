@@ -2,7 +2,6 @@ use crate::consts::AsNamespaceName;
 use crate::domains::organization::Organization;
 use crate::domains::proxy::Proxy;
 use crate::domains::proxy_template::ProxyTemplate;
-use crate::managers::region_connection::RegionConnectionManager;
 use k8s_openapi::api::core::v1::{
     Container, Namespace, Pod, PodSpec, Service, ServicePort, ServiceSpec,
 };
@@ -13,24 +12,17 @@ use kube::Api;
 use maplit::btreemap;
 
 #[derive(Clone)]
-pub struct KubeManager {
-    region_connection_manager: RegionConnectionManager,
+pub struct KubeWrappedClient {
+    client: kube::Client,
 }
 
-impl KubeManager {
-    pub fn new(region_connection_manager: RegionConnectionManager) -> Self {
-        Self {
-            region_connection_manager,
-        }
+impl KubeWrappedClient {
+    pub fn new(client: kube::Client) -> Self {
+        Self { client }
     }
 
-    pub async fn on_organization_creation(&self, organization: &Organization) {
-        let namespaces: Api<Namespace> = Api::all(
-            self.region_connection_manager
-                .find_kube_client_by_id(&organization.region_id)
-                .await
-                .unwrap(),
-        );
+    pub async fn create_organization_namespace(&self, organization: &Organization) {
+        let namespaces: Api<Namespace> = Api::all(self.client.clone());
 
         namespaces
             .create(
@@ -50,19 +42,14 @@ impl KubeManager {
         // TODO: HANDLE ERRORS
     }
 
-    pub async fn on_proxy_creation(
+    pub async fn create_proxy_pod(
         &self,
         organization: &Organization,
         template: &ProxyTemplate,
         proxy: &Proxy,
     ) {
-        let client = self
-            .region_connection_manager
-            .find_kube_client_by_id(&organization.region_id)
-            .await
-            .unwrap();
         let pods: Api<Pod> =
-            Api::namespaced(client.clone(), &organization.slug.as_namespace_name());
+            Api::namespaced(self.client.clone(), &organization.slug.as_namespace_name());
 
         pods.create(
             &PostParams::default(),
@@ -89,7 +76,7 @@ impl KubeManager {
         .unwrap();
 
         let services: Api<Service> =
-            Api::namespaced(client, &organization.slug.as_namespace_name());
+            Api::namespaced(self.client.clone(), &organization.slug.as_namespace_name());
 
         services
             .create(

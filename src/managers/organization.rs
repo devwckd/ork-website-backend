@@ -1,19 +1,22 @@
 use uuid::Uuid;
 
 use crate::domains::organization::{Organization, OrganizationResult};
-use crate::managers::kube::KubeManager;
+use crate::managers::region_connection::RegionConnectionManager;
 use crate::repositories::organization::OrganizationRepository;
 
 #[derive(Clone)]
 pub struct OrganizationManager {
-    kube_manager: KubeManager,
+    region_connection_manager: RegionConnectionManager,
     organization_repository: OrganizationRepository,
 }
 
 impl OrganizationManager {
-    pub fn new(kube_manager: KubeManager, organization_repository: OrganizationRepository) -> Self {
+    pub fn new(
+        region_connection_manager: RegionConnectionManager,
+        organization_repository: OrganizationRepository,
+    ) -> Self {
         Self {
-            kube_manager,
+            region_connection_manager,
             organization_repository,
         }
     }
@@ -36,8 +39,11 @@ impl OrganizationManager {
     pub async fn create(&self, organization: &Organization) -> OrganizationResult<()> {
         self.organization_repository.insert(organization).await?;
 
-        self.kube_manager
-            .on_organization_creation(&organization)
+        self.region_connection_manager
+            .find_kube_wrapped_client_by_id(&organization.region_id)
+            .await
+            .unwrap()
+            .create_organization_namespace(&organization)
             .await;
 
         Ok(())

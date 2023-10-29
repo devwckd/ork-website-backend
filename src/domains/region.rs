@@ -16,6 +16,13 @@ pub struct Region {
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct RegionOptions {
     pub kube: Kubeconfig,
+    pub bridge: BridgeConfig,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct BridgeConfig {
+    #[serde(rename = "basePath")]
+    pub base_path: String,
 }
 
 pub type RegionResult<R> = Result<R, RegionError>;
