@@ -4,15 +4,24 @@ CREATE TABLE proxy_templates
 (
     id              UUID PRIMARY KEY,
     slug            VARCHAR NOT NULL,
+
     image           VARCHAR NOT NULL,
     plugins_dir     VARCHAR NOT NULL,
+
+    bridge_id       UUID,
     organization_id UUID    NOT NULL,
 
-    CONSTRAINT unique_org_slug
-        UNIQUE (organization_id, slug),
+
+    CONSTRAINT fk_bridge_id
+        FOREIGN KEY (bridge_id)
+            REFERENCES bridges (id)
+            ON DELETE SET NULL,
 
     CONSTRAINT fk_organization_id
         FOREIGN KEY (organization_id)
             REFERENCES organizations (id)
-            ON DELETE CASCADE
+            ON DELETE CASCADE,
+
+    CONSTRAINT unique_org_slug
+        UNIQUE (organization_id, slug)
 )

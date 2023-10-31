@@ -1,4 +1,5 @@
 use ork_bridge_service::domains::namespace::{CreateNamespaceData, Namespace};
+use ork_bridge_service::domains::proxy::{CreateProxyData, Proxy};
 use reqwest::StatusCode;
 
 #[derive(Clone)]
@@ -29,6 +30,22 @@ impl BridgeServiceClient {
             Ok(res) => match res.status() {
                 StatusCode::OK => Ok(res.json().await.unwrap()),
                 StatusCode::CONFLICT => Err(BridgeServiceError::NamespaceAlreadyExists),
+                _ => Err(BridgeServiceError::Unknown(res.status().to_string())),
+            },
+            Err(err) => Err(BridgeServiceError::Unknown(err.to_string())),
+        }
+    }
+
+    pub async fn declare_proxy(&self, data: &CreateProxyData) -> BridgeServiceResult<Proxy> {
+        match self
+            .reqwest
+            .post(format!("{}/proxies", &self.base_path))
+            .json(&data)
+            .send()
+            .await
+        {
+            Ok(res) => match res.status() {
+                StatusCode::OK => Ok(res.json().await.unwrap()),
                 _ => Err(BridgeServiceError::Unknown(res.status().to_string())),
             },
             Err(err) => Err(BridgeServiceError::Unknown(err.to_string())),

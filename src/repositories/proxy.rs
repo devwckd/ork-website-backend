@@ -22,10 +22,12 @@ impl ProxyRepository {
 
     pub async fn insert(&self, organization_id: &Uuid, proxy: &Proxy) -> ProxyResult<()> {
         sqlx::query(
-            "INSERT INTO proxies(id, slug, template_id, organization_id) VALUES ($1, $2, $3, $4);",
+            "INSERT INTO proxies(id, slug, bridge_id, bs_proxy_id, template_id, organization_id) VALUES ($1, $2, $3, $4);",
         )
         .bind(&proxy.id)
         .bind(&proxy.slug)
+        .bind(&proxy.bridge_id)
+        .bind(&proxy.bs_proxy_id)
         .bind(&proxy.template_id)
         .bind(&organization_id)
         .execute(&self.pg_pool)

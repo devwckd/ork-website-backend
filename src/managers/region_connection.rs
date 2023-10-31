@@ -31,11 +31,11 @@ impl RegionConnectionManager {
             .unwrap();
 
             let mut kube = kube.write().await;
-            kube.insert(region.id.clone(), KubeWrappedClient::new(client));
+            kube.insert(region.id, KubeWrappedClient::new(client));
 
             let mut bridge = bridge.write().await;
             bridge.insert(
-                region.id.clone(),
+                region.id,
                 BridgeServiceClient::new(region.options.bridge.base_path.clone()),
             );
         }

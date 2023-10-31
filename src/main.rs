@@ -49,8 +49,7 @@ async fn main() {
 
     let region_manager = RegionManager::new(region_repository.clone());
     let region_connection_manager = RegionConnectionManager::new(region_manager.clone()).await;
-    let bridge_manager =
-        BridgeManager::new(bridge_repository.clone(), region_connection_manager.clone());
+    let bridge_manager = BridgeManager::new(bridge_repository.clone());
     let organization_manager = OrganizationManager::new(
         region_connection_manager.clone(),
         organization_repository.clone(),
@@ -81,15 +80,22 @@ async fn main() {
             )
             .nest(
                 "/:org_id/proxies",
-                routes::proxy::router(proxy_manager.clone(), proxy_template_manager.clone()),
+                routes::proxy::router(
+                    proxy_manager.clone(),
+                    proxy_template_manager.clone(),
+                    region_connection_manager.clone(),
+                ),
             )
             .nest(
                 "/:org_id/proxy-templates",
-                routes::proxy_template::router(proxy_template_manager.clone()),
+                routes::proxy_template::router(
+                    bridge_manager.clone(),
+                    proxy_template_manager.clone(),
+                ),
             )
             .nest(
                 "/:org_id/bridges",
-                routes::bridge::router(bridge_manager.clone()),
+                routes::bridge::router(bridge_manager.clone(), region_connection_manager.clone()),
             ),
         )
         .nest("/regions", routes::region::router(region_manager.clone()))

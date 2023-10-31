@@ -1,3 +1,4 @@
+use crate::domains::bridge::BridgeError;
 use crate::domains::organization::OrganizationError;
 use axum::response::{IntoResponse, Response};
 use uuid::Uuid;
@@ -9,13 +10,18 @@ pub struct ProxyTemplate {
     pub slug: String,
     pub image: String,
     pub plugins_dir: String,
+
+    pub bridge_id: Option<Uuid>,
 }
 
 #[derive(Clone, Debug, serde::Deserialize, validator::Validate)]
 pub struct CreateProxyTemplateData {
+    #[validate(regex = "crate::consts::SLUG_REGEX")]
     pub slug: String,
     pub image: String,
     pub plugins_dir: String,
+    #[validate(regex = "crate::consts::SLUG_REGEX")]
+    pub bridge_slug: Option<String>,
 }
 
 pub type ProxyTemplateResult<R> = Result<R, ProxyTemplateError>;
@@ -42,6 +48,11 @@ impl From<sqlx::Error> for ProxyTemplateError {
     }
 }
 
+impl From<BridgeError> for ProxyTemplateError {
+    fn from(value: BridgeError) -> Self {
+        todo!()
+    }
+}
 impl IntoResponse for ProxyTemplateError {
     fn into_response(self) -> Response {
         todo!()

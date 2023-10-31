@@ -1,6 +1,5 @@
 use crate::domains::organization_member::{OrganizationMember, OrganizationMemberResult};
 use crate::managers::organization_member::OrganizationMemberManager;
-use crate::managers::session::SessionManager;
 use axum::extract::{Path, State};
 use axum::routing::get;
 use axum::Json;

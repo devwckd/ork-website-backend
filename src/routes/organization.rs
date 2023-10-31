@@ -1,16 +1,15 @@
+use axum::extract::State;
+use axum::routing::{get, post};
+use axum::Json;
+use uuid::Uuid;
+use validator::Validate;
+
 use crate::domains::organization::{CreateOrganizationData, Organization, OrganizationResult};
 use crate::domains::organization_member::OrganizationMember;
 use crate::extractors::authenticated_user::AuthenticatedUser;
 use crate::managers::organization::OrganizationManager;
 use crate::managers::organization_member::OrganizationMemberManager;
 use crate::managers::region::RegionManager;
-use crate::managers::session::SessionManager;
-use axum::extract::State;
-use axum::routing::{get, post};
-use axum::Json;
-use log::info;
-use uuid::Uuid;
-use validator::Validate;
 
 pub fn router(
     organization_manager: OrganizationManager,
@@ -59,14 +58,14 @@ async fn create(
     let organization = Organization {
         id: Uuid::new_v4(),
         slug: data.slug,
-        region_id: region.id.clone(),
+        region_id: region.id,
     };
 
     organization_manager.create(&organization).await?;
 
     let organization_member = OrganizationMember {
-        organization_id: organization.id.clone(),
-        user_id: user.id.clone(),
+        organization_id: organization.id,
+        user_id: user.id,
         role: 2,
     };
 

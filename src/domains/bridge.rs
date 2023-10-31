@@ -3,12 +3,12 @@ use axum::response::{IntoResponse, Response};
 use uuid::Uuid;
 use validator::ValidationErrors;
 
-#[derive(Clone, Debug, serde::Serialize)]
+#[derive(Clone, Debug, serde::Serialize, sqlx::FromRow)]
 pub struct Bridge {
     pub id: Uuid,
     pub slug: String,
     #[serde(skip_serializing)]
-    pub external_id: Uuid,
+    pub bs_namespace_id: Uuid,
 }
 
 #[derive(Clone, Debug, serde::Deserialize, validator::Validate)]
@@ -21,6 +21,8 @@ pub type BridgeResult<R> = Result<R, BridgeError>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum BridgeError {
+    #[error("bridge not found")]
+    NotFound,
     #[error("validation errors: {0}")]
     Validation(#[from] ValidationErrors),
 }

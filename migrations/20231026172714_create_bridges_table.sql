@@ -4,7 +4,7 @@ CREATE TABLE bridges
 (
     id              UUID PRIMARY KEY,
     slug            VARCHAR NOT NULL,
-    external_id     UUID    NOT NULL,
+    bs_namespace_id UUID    NOT NULL, /* bridge service id */
     organization_id UUID    NOT NULL,
 
     CONSTRAINT fk_organization_id

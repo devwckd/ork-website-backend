@@ -4,8 +4,13 @@ CREATE TABLE proxies
 (
     id              UUID PRIMARY KEY,
     slug            VARCHAR NOT NULL,
+
+    bridge_id       UUID,
+    bs_proxy_id     UUID,
+
     template_id     UUID    NOT NULL,
     organization_id UUID    NOT NULL,
+
     /* TODO: ADD POD INFO STUFF */
 
     CONSTRAINT fk_template_id

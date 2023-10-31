@@ -8,7 +8,6 @@ use crate::repositories::proxy::ProxyRepository;
 
 #[derive(Clone)]
 pub struct ProxyManager {
-    region_connection_manager: RegionConnectionManager,
     proxy_repository: ProxyRepository,
 }
 
@@ -17,10 +16,7 @@ impl ProxyManager {
         region_connection_manager: RegionConnectionManager,
         proxy_repository: ProxyRepository,
     ) -> Self {
-        Self {
-            region_connection_manager,
-            proxy_repository,
-        }
+        Self { proxy_repository }
     }
 
     pub async fn list(&self, organization_id: &Uuid) -> ProxyResult<Vec<Proxy>> {
@@ -36,13 +32,6 @@ impl ProxyManager {
         self.proxy_repository
             .insert(&organization.id, proxy)
             .await?;
-
-        self.region_connection_manager
-            .find_kube_wrapped_client_by_id(&organization.region_id)
-            .await
-            .unwrap()
-            .create_proxy_pod(organization, template, proxy)
-            .await;
 
         Ok(())
     }

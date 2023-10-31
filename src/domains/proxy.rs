@@ -7,6 +7,12 @@ use validator::ValidationErrors;
 pub struct Proxy {
     pub id: Uuid,
     pub slug: String,
+
+    #[serde(skip_serializing)]
+    pub bridge_id: Option<Uuid>,
+    #[serde(skip_serializing)]
+    pub bs_proxy_id: Option<Uuid>,
+
     pub template_id: Uuid,
 }
 
