@@ -14,5 +14,8 @@ CREATE TABLE organization_members
     CONSTRAINT fk_organization_id
         FOREIGN KEY (organization_id)
             REFERENCES organizations (id)
-            ON DELETE CASCADE
+            ON DELETE CASCADE,
+
+    CONSTRAINT unique_organization_member
+        UNIQUE (user_id, organization_id)
 )

@@ -12,6 +12,6 @@ CREATE TABLE bridges
             REFERENCES organizations (id)
             ON DELETE SET NULL,
 
-    CONSTRAINT unique_organization_slug
+    CONSTRAINT unique_bridge_slug_per_organization
         UNIQUE (slug, organization_id)
 )

@@ -19,5 +19,8 @@ CREATE TABLE proxies
 
     CONSTRAINT fk_organization_id
         FOREIGN KEY (organization_id)
-            REFERENCES organizations (id)
+            REFERENCES organizations (id),
+
+    CONSTRAINT unique_proxy_slug_per_organization
+        UNIQUE (slug, organization_id)
 )

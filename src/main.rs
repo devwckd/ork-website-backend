@@ -5,6 +5,7 @@ mod extractors;
 mod managers;
 mod repositories;
 mod routes;
+mod utils;
 
 use crate::managers::bridge::BridgeManager;
 use crate::managers::organization::OrganizationManager;

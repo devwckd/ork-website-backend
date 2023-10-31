@@ -22,6 +22,6 @@ CREATE TABLE proxy_templates
             REFERENCES organizations (id)
             ON DELETE CASCADE,
 
-    CONSTRAINT unique_org_slug
+    CONSTRAINT unique_proxy_template_slug_per_organization
         UNIQUE (organization_id, slug)
 )

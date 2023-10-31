@@ -1,11 +1,13 @@
+use std::borrow::Cow;
+
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
+use tracing::error;
+use validator::{HasLen, ValidationError, ValidationErrors};
+
 use crate::domains::error::ErrorResponse;
 use crate::domains::session::SessionError;
 use crate::domains::user::UserError;
-use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
-use std::borrow::Cow;
-use tracing::error;
-use validator::{HasLen, ValidationError, ValidationErrors};
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize, validator::Validate)]
 pub struct RegisterData {
@@ -48,6 +50,10 @@ pub enum AuthError {
     UserNotFound,
     #[error("email already in use")]
     EmailAlreadyInUse,
+    #[error("wrong password")]
+    WrongPassword,
+    #[error("invalid session")]
+    InvalidSession,
     #[error("unknown error: {0}")]
     Unknown(String),
 }
@@ -64,13 +70,19 @@ impl From<UserError> for AuthError {
 
 impl From<password_hash::Error> for AuthError {
     fn from(value: password_hash::Error) -> Self {
-        todo!()
+        match value {
+            password_hash::Error::Password => AuthError::WrongPassword,
+            _ => AuthError::Unknown(value.to_string()),
+        }
     }
 }
 
 impl From<SessionError> for AuthError {
     fn from(value: SessionError) -> Self {
-        todo!()
+        match value {
+            SessionError::Invalid => AuthError::InvalidSession,
+            SessionError::Unknown(err) => AuthError::Unknown(err),
+        }
     }
 }
 
@@ -90,6 +102,12 @@ impl IntoResponse for AuthError {
                 error!("{:?}", err);
                 ErrorResponse::of(StatusCode::INTERNAL_SERVER_ERROR, "internal server error")
                     .into_response()
+            }
+            AuthError::WrongPassword => {
+                ErrorResponse::of(StatusCode::LOCKED, "wrong password").into_response()
+            }
+            AuthError::InvalidSession => {
+                ErrorResponse::of(StatusCode::FORBIDDEN, "invalid session").into_response()
             }
         }
     }

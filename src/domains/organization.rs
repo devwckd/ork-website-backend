@@ -1,6 +1,7 @@
 use crate::domains::error::ErrorResponse;
 use crate::domains::organization_member::OrganizationMemberError;
 use crate::domains::region::RegionError;
+use crate::utils::handle_sqlx_unique;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use tracing::error;
@@ -26,6 +27,8 @@ pub type OrganizationResult<R> = Result<R, OrganizationError>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum OrganizationError {
+    #[error("organization already exists")]
+    AlreadyExists,
     #[error("validation errors: {0}")]
     Validation(#[from] ValidationErrors),
     #[error("organization not found")]
@@ -38,8 +41,12 @@ pub enum OrganizationError {
 
 impl From<sqlx::Error> for OrganizationError {
     fn from(value: sqlx::Error) -> Self {
-        error!("{:?}", value);
-        todo!()
+        handle_sqlx_unique(
+            value,
+            "unique_organization_slug",
+            |_| OrganizationError::AlreadyExists,
+            OrganizationError::Unknown,
+        )
     }
 }
 
@@ -56,6 +63,8 @@ impl From<OrganizationMemberError> for OrganizationError {
     fn from(value: OrganizationMemberError) -> Self {
         match value {
             OrganizationMemberError::NotFound => OrganizationError::NotFound,
+            OrganizationMemberError::Unknown(err) => OrganizationError::Unknown(err),
+            _ => unreachable!(),
         }
     }
 }
@@ -63,18 +72,25 @@ impl From<OrganizationMemberError> for OrganizationError {
 impl IntoResponse for OrganizationError {
     fn into_response(self) -> Response {
         match self {
-            OrganizationError::Validation(errs) => {
-                ErrorResponse::of(StatusCode::BAD_REQUEST, errs).into_response()
+            OrganizationError::Validation(err) => {
+                ErrorResponse::of(StatusCode::BAD_REQUEST, err).into_response()
             }
             OrganizationError::RegionNotFound => {
-                ErrorResponse::of(StatusCode::NOT_FOUND, "region not found").into_response()
+                ErrorResponse::of(StatusCode::PRECONDITION_FAILED, "region not found")
+                    .into_response()
             }
-            OrganizationError::Unknown(_) => {
-                ErrorResponse::of(StatusCode::INTERNAL_SERVER_ERROR, "internalServerError")
+            OrganizationError::Unknown(err) => {
+                error!("{}", err);
+                ErrorResponse::of(StatusCode::INTERNAL_SERVER_ERROR, "internal server error")
                     .into_response()
             }
             OrganizationError::NotFound => {
-                ErrorResponse::of(StatusCode::NOT_FOUND, "organization not found").into_response()
+                ErrorResponse::of(StatusCode::PRECONDITION_FAILED, "organization not found")
+                    .into_response()
+            }
+            OrganizationError::AlreadyExists => {
+                ErrorResponse::of(StatusCode::CONFLICT, "organization already exists")
+                    .into_response()
             }
         }
     }
